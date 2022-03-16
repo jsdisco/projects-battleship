@@ -138,7 +138,7 @@ class Battleship {
 
     getHighlightedCoordinates(y, x, id, isHori) {
         const size = this.playerShips.find(ship => ship.id === id).size;
-        const coords = { x: [], y: [] };
+        const coords = {x: [], y: []};
         if (this.isValidPosition(y, x, size, isHori, this.playerBoard)) {
             if (isHori) {
                 coords.y = [y];
@@ -156,16 +156,16 @@ class Battleship {
     }
 
     initCompShips() {
-        return this.ships.map((s, i) => ({ id: i + 1, size: s, damaged: 0, isDestroyed: false }));
+        return this.ships.map((s, i) => ({id: i + 1, size: s, damaged: 0, isDestroyed: false}));
     }
 
     initPlayerShips() {
-        return this.ships.map((s, i) => ({ id: i + 1, size: s, isPlaced: false, damaged: 0, isDestroyed: false }));
+        return this.ships.map((s, i) => ({id: i + 1, size: s, isPlaced: false, damaged: 0, isDestroyed: false}));
     }
 
     initAllCompMoves() {
         return this.createBoard(this.gridSize)
-            .map((row, i) => row.map((_, j) => ({ x: j, y: i, hit: false })))
+            .map((row, i) => row.map((_, j) => ({x: j, y: i, hit: false})))
             .flat();
     }
 
@@ -176,6 +176,11 @@ class Battleship {
 
     playerMove(x, y) {
         const fieldValue = this.compBoard[y][x];
+
+        // already clicked this field
+        if (typeof(fieldValue) === 'string'){
+            return false;
+        }
 
         // ship ids are 1, 2, 3, 4, 5;
         const isShip = fieldValue > 0 && fieldValue <= this.ships.length;
@@ -197,17 +202,18 @@ class Battleship {
                 this.winner = 'player';
             }
         }
+        return true;
     }
 
     compMove() {
         if (this.compMoves.length === 0 || !this.compMoves[this.compMoves.length - 1].hit) {
             const randomIndex = Math.floor(Math.random() * this.allCompMoves.length);
-            const nextMove = this.allCompMoves.splice(randomIndex, 1)[0];
+            const move = this.allCompMoves.splice(randomIndex, 1)[0];
 
-            const fieldValue = this.playerBoard[nextMove.y][nextMove.x];
+            const fieldValue = this.playerBoard[move.y][move.x];
             const isShip = fieldValue > 0 && fieldValue <= this.ships.length;
             const copy = JSON.parse(JSON.stringify(this.playerBoard));
-            copy[nextMove.y][nextMove.x] = isShip ? 's' : 'w';
+            copy[move.y][move.x] = isShip ? 's' : 'w';
             this.playerBoard = copy;
             if (isShip) {
                 this.playerShips = this.playerShips.map(ship => {
@@ -221,7 +227,7 @@ class Battleship {
                 });
                 //nextMove.hit = true;
             }
-            this.compMoves.push(nextMove);
+            this.compMoves.push(move);
         } else {
             console.log('TODO');
         }

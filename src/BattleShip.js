@@ -65,13 +65,17 @@ export default function BattleShip() {
 
     const handlePlayerMove = (i, j) => {
         if (isPlayerMove) {
-            setIsPlayerMove(false);
-            game.playerMove(j, i);
-            setCompBoard(game.compBoard);
-            setTimeout(() => {
-                game.compMove();
-                setIsPlayerMove(true);
-            }, 1200);
+            const wasValidMove = game.playerMove(j, i);
+            if (wasValidMove){
+                setIsPlayerMove(false);
+                setCompBoard(game.compBoard);
+                if (!game.winner){
+                    setTimeout(() => {
+                        game.compMove();
+                        setIsPlayerMove(true);
+                    }, 1200);
+                }
+            }
         }
     };
 
