@@ -1,0 +1,180 @@
+:root {
+    --light: #f5f5f5;
+    --dark: #191919;
+    --fontLight: rgba(255, 255, 255, 0.85);
+    --orange: #e68200;
+    --orangeDark: #b65224;
+    --brown: #a15532;
+    --blue: #357;
+    --blueLight: #5ba4ee;
+    --red: #d13824;
+    --boxShadow: 1px 3px 6px -2px rgba(0, 0, 0, 0.5);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--dark);
+    color: var(--fontLight);
+}
+
+.app {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 0 10px 30px;
+}
+
+button {
+    padding: 8px 16px;
+    background: var(--blue);
+    color: var(--fontLight);
+    font-family: inherit;
+    border: none;
+    box-shadow: var(--boxShadow);
+    cursor: pointer;
+    &.disabled {
+        background: #777;
+        pointer-events: none;
+    }
+}
+
+header {
+    margin-bottom: 32px;
+    h1 span:nth-child(3) {
+        display: inline-block;
+        transform: matrix(-1, 0, 0, 1, 0, 0);
+    }
+}
+
+.flex {
+    margin-bottom: 32px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.ships-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    .ships {
+        display: flex;
+        flex-direction: column;
+    }
+    .ship {
+        height: 30px;
+        background: #bbb;
+        border-radius: 6px;
+        margin-bottom: 6px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        &.selected {
+            border: 2px solid #fff;
+            background: var(--brown);
+            box-shadow: var(--boxShadow);
+        }
+        &.disabled {
+            background: #555;
+            pointer-events: none;
+        }
+        &.destroyed {
+            background: #333;
+            pointer-events: none;
+            span {
+                font-size: 12px;
+                transform: rotate(-30deg);
+            }
+        }
+    }
+    &.player {
+        .ship {
+            cursor: pointer;
+        }
+    }
+    .btns-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        .btns-container-top {
+            display: flex;
+            justify-content: space-between;
+            button:nth-child(1) {
+                font-size: 40px;
+                margin-right: 6px;
+            }
+            button:nth-child(2) {
+                font-size: 30px;
+                flex-grow: 1;
+                &.disabled {
+                    background: #777;
+                    pointer-events: none;
+                }
+            }
+        }
+        button {
+            margin-top: 6px;
+        }
+    }
+}
+
+.board {
+    width: 300px;
+    background: var(--blueLight);
+    &.active .cell {
+        cursor: url(assets/battleship2.cur), pointer;
+    }
+    .row {
+        display: flex;
+    }
+    .cell {
+        width: 30px;
+        height: 30px;
+        border: 1px solid var(--light);
+        filter: brightness(1);
+        &.highlight {
+            background: var(--brown);
+        }
+        &.blue {
+            background: #1e5799;
+            background-image: -webkit-radial-gradient(center, ellipse farthest-corner, #1e5799 0%, #2989d8 43%, #0a73c9 59%, #7db9e8 100%);
+            filter: brightness(1);
+            transition: background-image 0.5s ease-out, filter 0.5s cubic-bezier(0, 0.35, 1, 10);
+        }
+        &.red {
+            background: var(--orangeDark);
+            background-image: url('assets/flame.svg');
+            background-size: 20px;
+            background-repeat: no-repeat;
+            background-position: bottom center;
+            filter: brightness(1);
+            transition: background-color 0.5s ease-out, filter 0.5s cubic-bezier(0, 0.35, 1, 10);
+        }
+    }
+}
+
+.end-msg {
+    width: 280px;
+    height: 150px;
+    position: absolute;
+    top: 405px;
+    left: 50%;
+    z-index: 999;
+    transform: translateX(-50%) translateY(-50%);
+    background: rgba(11, 11, 11, 0.9);
+    border-radius: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.8);
+    span {
+        font-size: 32px;
+    }
+}
