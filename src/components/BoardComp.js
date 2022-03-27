@@ -3,9 +3,9 @@ export default function BoardComp({ phase, compBoard, handlePlayerMove }) {
         <div className={phase === 'gameIsRunning' ? 'board active' : 'board'}>
             {compBoard.map((row, i) => (
                 <div key={`comp-${i}`} className="row">
-                    {row.map((value, j) => {
-                        const classname = value === 's' ? 'cell red' : value === 'w' ? 'cell blue' : 'cell';
-                        return <div key={`comp-${i}-${j}`} className={classname} onClick={() => handlePlayerMove(i, j)}></div>;
+                    {row.map(cell => {
+                        const classname = cell.covered ? 'cell' : cell.shipId ? 'cell red' : 'cell blue';
+                        return <div key={cell.id} className={classname} onClick={() => handlePlayerMove(cell)}></div>;
                     })}
                 </div>
             ))}

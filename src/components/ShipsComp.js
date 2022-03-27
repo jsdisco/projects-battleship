@@ -7,7 +7,7 @@ export default function ShipsComp({ compShips }) {
                         <div
                             key={`comp-${ship.id}`}
                             className={ship.isDestroyed ? 'ship destroyed' : 'ship disabled'}
-                            style={{ width: `${ship.size * 30}px` }}
+                            style={{ width: `${ship.shipSize * 30}px` }}
                         >
                             {ship.isDestroyed && <span>SUNK</span>}
                         </div>

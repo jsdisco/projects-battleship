@@ -137,14 +137,17 @@ header {
     .cell {
         width: 30px;
         height: 30px;
-        border: 1px solid var(--light);
+        border:1px solid var(--light);
         filter: brightness(1);
-        &.highlight {
+        &.hover {
             background: var(--brown);
+        }
+        &.brown {
+            background:var(--brown);
         }
         &.blue {
             background: #1e5799;
-            background-image: -webkit-radial-gradient(center, ellipse farthest-corner, #1e5799 0%, #2989d8 43%, #0a73c9 59%, #7db9e8 100%);
+            background: -webkit-radial-gradient(center, ellipse farthest-corner, #1e5799 0%, #2989d8 43%, #0a73c9 59%, #7db9e8 100%);
             filter: brightness(1);
             transition: background-image 0.5s ease-out, filter 0.5s cubic-bezier(0, 0.35, 1, 10);
         }
@@ -156,6 +159,9 @@ header {
             background-position: bottom center;
             filter: brightness(1);
             transition: background-color 0.5s ease-out, filter 0.5s cubic-bezier(0, 0.35, 1, 10);
+        }
+        &.grey {
+            background:lightgray;
         }
     }
 }

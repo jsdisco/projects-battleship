@@ -4,7 +4,6 @@ import { FaTrash } from 'react-icons/fa';
 export default function ShipsPlayer({
     playerShips,
     phase,
-    selectedId,
     selectShip,
     changeOrientation,
     handleResetBoard,
@@ -19,7 +18,7 @@ export default function ShipsPlayer({
                         <div
                             key={`player-${ship.id}`}
                             className={
-                                selectedId === ship.id
+                                ship.isSelected
                                     ? 'ship selected'
                                     : ship.isDestroyed
                                     ? 'ship destroyed'
@@ -28,7 +27,7 @@ export default function ShipsPlayer({
                                     : 'ship'
                             }
                             onClick={() => (phase === 'hasInitialised' ? selectShip(ship.id) : null)}
-                            style={{ width: `${ship.size * 30}px` }}
+                            style={{ width: `${ship.shipSize * 30}px` }}
                         >
                             {ship.isDestroyed && <span>SUNK</span>}
                         </div>
@@ -38,7 +37,7 @@ export default function ShipsPlayer({
             <div className="btns-container">
                 {phase === 'hasInitialised' && (
                     <div className="btns-container-top">
-                        <button onClick={changeOrientation} disabled={selectedId === null}>
+                        <button onClick={changeOrientation}>
                             <AiOutlineRotateLeft />
                         </button>
                         <button onClick={handleResetBoard}>

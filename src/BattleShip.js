@@ -11,40 +11,52 @@ import Battleship from './classes/classBattleShip';
 
 export default function BattleShip() {
     const [game, setGame] = useState(null);
-    const [isHori, setIsHori] = useState(true);
-    const [highlightedCells, setHighlightedCells] = useState({ x: [], y: [] });
-    const [selectedId, setSelectedId] = useState(1);
+    const [hoveredCells, setHoveredCells] = useState(null);
     const [compBoard, setCompBoard] = useState([]);
+    const [playerBoard, setPlayerBoard] = useState([])
+    const [playerShips, setPlayerShips] = useState([])
     const [isPlayerMove, setIsPlayerMove] = useState(false);
 
     useEffect(() => {
         if (!game) {
             const newGame = new Battleship();
             setGame(newGame);
-            setCompBoard(newGame.compBoard);
+            setCompBoard(newGame.compBoard.grid);
+            setPlayerBoard(newGame.playerBoard.grid)
+            setPlayerShips(newGame.playerShips)
         }
     }, [game]);
 
-    const changeOrientation = () => setIsHori(prev => !prev);
 
-    const highlightCells = (i, j) => {
-        setHighlightedCells(game.getHighlightedCoordinates(i, j, selectedId, isHori));
+    const changeOrientation = () => game.playerShips.forEach(ship => ship.rotateShip())
+
+    const hoverBoard = (i, j) => {
+        const ship = playerShips.find(s => s.isSelected)
+        if (ship){
+            setHoveredCells(game.playerBoard.startcellToHoverCoords(ship, j, i))
+        }
     };
 
-    const resetHighlightCells = () => setHighlightedCells({ x: [], y: [] });
+    const resetHoveredCells = () => setHoveredCells(null);
 
-    const selectShip = id => setSelectedId(prev => (prev === null || prev !== id ? id : null));
+    const selectShip = id => {
+        game.selectPlayerShip(id);
+        setPlayerShips(game.playerShips)
+    };
 
     const handleResetBoard = () => {
-        game.resetPlayerBoard();
-        setSelectedId(1);
-        setIsHori(true);
+        game.resetPlayerBoard(false)
+        setPlayerBoard(game.playerBoard.grid);
+        setPlayerShips(game.playerShips)
     };
 
-    const handlePlaceShip = (y, x, isHori) => {
-        const wasPlaced = game.placePlayerShip(y, x, selectedId, isHori);
+    const handlePlaceShip = (cell) => {
+        const ship = game.playerShips.find(s => s.isSelected)
+        const wasPlaced = game.playerBoard.placePlayerShip(ship, cell)
+
         if (wasPlaced) {
-            setSelectedId(prev => (prev < game.ships.length ? prev + 1 : null));
+            game.selectNextPlayerShip()
+            setPlayerShips(game.playerShips)
         }
     };
 
@@ -55,25 +67,27 @@ export default function BattleShip() {
 
     const handleNewGame = () => {
         const newGame = new Battleship();
+        console.log(newGame)
         setGame(newGame);
-        setCompBoard(newGame.compBoard);
+        setCompBoard(newGame.compBoard.grid);
+        setPlayerBoard(newGame.playerBoard.grid);
+        setPlayerShips(newGame.playerShips);
         setIsPlayerMove(false);
-        setIsHori(true);
-        setSelectedId(1);
-        setHighlightedCells({ x: [], y: [] });
+        setHoveredCells(null);
     };
 
-    const handlePlayerMove = (i, j) => {
+    const handlePlayerMove = (cell) => {
         if (isPlayerMove) {
-            const wasValidMove = game.playerMove(j, i);
+            const wasValidMove = game.playerMove(cell);
             if (wasValidMove){
                 setIsPlayerMove(false);
-                setCompBoard(game.compBoard);
+                setCompBoard(game.compBoard.grid);
                 if (!game.winner){
                     setTimeout(() => {
                         game.compMove();
+                        setPlayerBoard(game.playerBoard.grid)
                         setIsPlayerMove(true);
-                    }, 1200);
+                    }, 900);
                 }
             }
         }
@@ -81,12 +95,7 @@ export default function BattleShip() {
 
     return (
         <div className="app">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Header />
-                <div>
-                    <button onClick={() => console.log(game)}>log</button>
-                </div>
-            </div>
+            <Header />
 
             {game?.winner && <EndMsg winner={game.winner} />}
 
@@ -97,19 +106,17 @@ export default function BattleShip() {
 
             <div className="flex">
                 <BoardPlayer
-                    playerBoard={game?.playerBoard}
-                    selectedId={selectedId}
-                    isHori={isHori}
-                    highlightCells={highlightCells}
-                    resetHighlightCells={resetHighlightCells}
-                    highlightedCells={highlightedCells}
+                    playerBoard={playerBoard}
+                    playerShips={playerShips}
+                    hoveredCells={hoveredCells}
+                    hoverBoard={hoverBoard}
+                    resetHoveredCells={resetHoveredCells}
                     handlePlaceShip={handlePlaceShip}
                     phase={game?.phase}
                 />
                 <ShipsPlayer
-                    playerShips={game?.playerShips}
+                    playerShips={playerShips}
                     phase={game?.phase}
-                    selectedId={selectedId}
                     selectShip={selectShip}
                     changeOrientation={changeOrientation}
                     handleResetBoard={handleResetBoard}

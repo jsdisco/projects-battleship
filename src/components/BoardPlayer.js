@@ -1,28 +1,27 @@
 export default function BoardPlayer({
     playerBoard,
-    selectedId,
-    isHori,
-    highlightCells,
-    resetHighlightCells,
-    highlightedCells,
+    playerShips,
+    hoveredCells,
+    hoverBoard,
+    resetHoveredCells,
     handlePlaceShip,
     phase
 }) {
+
     return (
-        <div className="board" onMouseLeave={resetHighlightCells}>
-            {playerBoard &&
-                playerBoard.map((row, i) => (
+        <div className="board" onMouseLeave={resetHoveredCells}>
+            {playerBoard.map((row, i) => (
                     <div key={`player-${i}`} className="row">
-                        {row.map((value, j) => {
-                            const isHighlighted = value >= 1 || (highlightedCells.x.includes(j) && highlightedCells.y.includes(i));
-                            const classname = isHighlighted ? 'cell highlight' : value === 's' ? 'cell red' : value === 'w' ? 'cell blue' : 'cell';
+                        {row.map((cell, j) => {
+                            const isHovered = (hoveredCells && cell.shipId) || (hoveredCells && hoveredCells.values.find(c => c.x === j && c.y === i));
+                            const classname = !cell.covered && cell.shipId ? 'cell red' : !cell.covered && !cell.shipId ? 'cell blue' : cell.covered && cell.shipId ? 'cell brown' : isHovered && hoveredCells.isValid ? 'cell hover' : isHovered && !hoveredCells.isValid ? 'cell grey' : 'cell'
                             return (
                                 <div
                                     key={`player-${i}-${j}`}
                                     className={classname}
-                                    onClick={() => handlePlaceShip(i, j, isHori)}
-                                    onMouseEnter={phase === 'hasInitialised' && selectedId !== null ? () => highlightCells(i, j) : null}
-                                ></div>
+                                    onClick={phase === 'hasInitialised' ? () => handlePlaceShip(cell) : null}
+                                    onMouseEnter={phase === 'hasInitialised' && !playerShips.every(ship => ship.isPlaced) ? () => hoverBoard(i, j) : null}
+                                >{}</div>
                             );
                         })}
                     </div>

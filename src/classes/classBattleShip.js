@@ -1,244 +1,348 @@
 const phases = ['hasInitialised', 'gameIsRunning'];
 
 class Battleship {
-    constructor(gridSize = 10, ships = [5, 4, 3, 3, 2]) {
+    constructor(gridSize = 10, shipSizes = [5, 4, 3, 3, 2]) {
         this.gridSize = gridSize;
-        this.ships = ships;
-        this.playerShips = this.initPlayerShips();
-        this.compShips = this.initCompShips();
-        this.playerBoard = this.createBoard(gridSize);
-        this.compBoard = this.createCompBoard(gridSize);
+        this.shipSizes = shipSizes;
+        this.playerShips = this.initShips(false);
+        this.compShips = this.initShips(true)
+        this.playerBoard = new Board(gridSize);
+        this.compBoard = this.populateCompBoard();
         this.phase = phases[0];
-        this.allCompMoves = this.initAllCompMoves();
-        this.compMoves = [];
         this.winner = null;
+        this.compKnows = this.initCompKnows()
     }
 
-    createBoard = size =>
-        Array(size)
-            .fill(0)
-            .map(_ => Array(size).fill(0));
+    initShips = (isComp) => this.shipSizes.map((size,i) => {
+        const id = i + 1;
+        const isHori = isComp ? Math.random() < 0.5 : true;
+        const isPlaced = false;
+        const isSelected = !isComp && i === 0;
+        return new Ship(id, size, isHori, isPlaced, isSelected)
+    })
 
-    getShipFields(y, x, size, isHori, board) {
-        let fields = [];
-        if (isHori) {
-            fields = board[y].slice(x, x + size);
-        } else {
-            for (let i = 0; i < size; i++) {
-                fields.push(board[y + i][x]);
-            }
-        }
-        return fields;
+    initCompKnows = () => ({startX:null, startY: null, x: null, y: null, isHori: null, testingIsHori:null, nextCellToTry:null});
+
+    populateCompBoard(){
+        this.compBoard = new Board(this.gridSize);
+        this.compShips.forEach(ship => this.compBoard.placeCompShip(ship))
+        return this.compBoard;
     }
 
-    canPlaceShip = arr => arr.every(element => element === 0);
+    selectPlayerShip = id => this.playerShips = this.playerShips.map(ship => {
+        ship.isSelected = ship.id === id
+        return ship
+    })
 
-    isValidPosition(y, x, size, isHori, board) {
-        if (isHori && x > this.gridSize - size) {
-            return false;
-        }
-        if (!isHori && y > this.gridSize - size) {
-            return false;
-        }
-        const fields = this.getShipFields(y, x, size, isHori, board);
-        return this.canPlaceShip(fields);
-    }
-
-    getRandomPosition(board, size, isHori) {
-        const values = [];
-
-        if (isHori) {
-            for (let y = 0; y < this.gridSize; y++) {
-                for (let x = 0; x <= this.gridSize - size; x++) {
-                    if (this.isValidPosition(y, x, size, isHori, board)) {
-                        values.push([y, x, size, isHori]);
-                    }
-                }
-            }
-        } else {
-            for (let y = 0; y <= this.gridSize - size; y++) {
-                for (let x = 0; x <= this.gridSize; x++) {
-                    if (this.isValidPosition(y, x, size, isHori, board)) {
-                        values.push([y, x, size, isHori]);
-                    }
-                }
-            }
-        }
-        const randomIndex = Math.floor(Math.random() * values.length);
-        return values[randomIndex];
-    }
-
-    placeShip(y, x, size, isHori, id, board) {
-        if (isHori) {
-            for (let i = x; i < size + x; i++) {
-                // ship placement
-                board[y][i] = id;
-
-                // borders above and below
-                if (y > 0) {
-                    board[y - 1][i] = -1;
-                }
-                if (y < this.gridSize - 1) {
-                    board[y + 1][i] = -1;
-                }
-            }
-            // borders left and right
-            if (x > 0) {
-                board[y][x - 1] = -1;
-            }
-            if (x + size < this.gridSize) {
-                board[y][x + size] = -1;
-            }
-        } else {
-            for (let i = y; i < size + y; i++) {
-                // ship placement
-                board[i][x] = id;
-
-                // borders left and right
-                if (x > 0) {
-                    board[i][x - 1] = -1;
-                }
-                if (x < this.gridSize - 1) {
-                    board[i][x + 1] = -1;
-                }
-            }
-            // borders above and below
-            if (y > 0) {
-                board[y - 1][x] = -1;
-            }
-            if (y + size < this.gridSize) {
-                board[y + size][x] = -1;
-            }
-        }
-    }
-
-    createCompBoard(size) {
-        const board = this.createBoard(size);
-        this.compShips.forEach(ship => {
-            const values = this.getRandomPosition(board, ship.size, Math.random() < 0.5);
-            this.placeShip(...values, ship.id, board);
-        });
-        return board;
-    }
-
-    placePlayerShip(y, x, id, isHori) {
-        const size = this.playerShips.find(ship => ship.id === id).size;
-        if (this.isValidPosition(y, x, size, isHori, this.playerBoard)) {
-            this.placeShip(y, x, size, isHori, id, this.playerBoard);
+    selectNextPlayerShip = () => {
+        const allShipsPlaced = this.playerShips.every(ship => ship.isPlaced);
+        if (allShipsPlaced){
             this.playerShips = this.playerShips.map(ship => {
-                if (ship.id === id) {
-                    ship.isPlaced = true;
-                }
+                ship.isSelected = false;
                 return ship;
-            });
-            return true;
+            })
+            return;
         }
-        return false;
+        const nextShip = this.playerShips.find(ship => !ship.isPlaced);
+        this.playerShips = this.playerShips.map(ship => {
+            ship.isSelected = ship.id === nextShip.id;
+            return ship
+        })
     }
 
-    getHighlightedCoordinates(y, x, id, isHori) {
-        const size = this.playerShips.find(ship => ship.id === id).size;
-        const coords = {x: [], y: []};
-        if (this.isValidPosition(y, x, size, isHori, this.playerBoard)) {
-            if (isHori) {
-                coords.y = [y];
-                for (let i = 0; i < size; i++) {
-                    coords.x.push(x + i);
-                }
-            } else {
-                coords.x = [x];
-                for (let i = 0; i < size; i++) {
-                    coords.y.push(y + i);
-                }
-            }
-        }
-        return coords;
+    resetPlayerBoard = () => {
+        this.playerShips = this.initShips(false)
+        this.playerBoard = new Board(this.gridSize)
     }
 
-    initCompShips() {
-        return this.ships.map((s, i) => ({id: i + 1, size: s, damaged: 0, isDestroyed: false}));
-    }
-
-    initPlayerShips() {
-        return this.ships.map((s, i) => ({id: i + 1, size: s, isPlaced: false, damaged: 0, isDestroyed: false}));
-    }
-
-    initAllCompMoves() {
-        return this.createBoard(this.gridSize)
-            .map((row, i) => row.map((_, j) => ({x: j, y: i, hit: false})))
-            .flat();
-    }
-
-    resetPlayerBoard() {
-        this.playerBoard = this.createBoard(this.gridSize);
-        this.playerShips = this.initPlayerShips();
-    }
-
-    playerMove(x, y) {
-        const fieldValue = this.compBoard[y][x];
-
-        // already clicked this field
-        if (typeof(fieldValue) === 'string'){
+    playerMove(cell){
+        if (!cell.covered){
             return false;
         }
-
-        // ship ids are 1, 2, 3, 4, 5;
-        const isShip = fieldValue > 0 && fieldValue <= this.ships.length;
-        const copy = JSON.parse(JSON.stringify(this.compBoard));
-        copy[y][x] = isShip ? 's' : 'w';
-        this.compBoard = copy;
-
-        if (isShip) {
+        cell.covered = false;
+        if (cell.shipId){
             this.compShips = this.compShips.map(ship => {
-                if (ship.id === fieldValue) {
-                    ship.damaged++;
-                    if (ship.damaged === ship.size) {
+                if (ship.id === cell.shipId){
+                    ++ship.damage;
+                    if (ship.damage === ship.shipSize){
                         ship.isDestroyed = true;
                     }
                 }
-                return ship;
-            });
-            if (this.compShips.every(ship => ship.isDestroyed)) {
-                this.winner = 'player';
-            }
+                return ship
+            })
         }
-        return true;
+        if (this.compShips.every(ship => ship.isDestroyed)){
+            this.winner = 'player'
+        }
+        return true
     }
 
-    compMove() {
-        if (this.compMoves.length === 0 || !this.compMoves[this.compMoves.length - 1].hit) {
-            const randomIndex = Math.floor(Math.random() * this.allCompMoves.length);
-            const move = this.allCompMoves.splice(randomIndex, 1)[0];
+    isAdjacentHori = (cell, x, y) => (cell.x === x-1 && cell.y === y) || (cell.x === x+1 && cell.y === y);
+    isAdjacentVert = (cell, x, y) => (cell.x === x && cell.y === y-1) || (cell.x === x && cell.y === y+1);
+    shuffle = arr => arr.sort(() => Math.random() - 0.5)
 
-            const fieldValue = this.playerBoard[move.y][move.x];
-            const isShip = fieldValue > 0 && fieldValue <= this.ships.length;
-            const copy = JSON.parse(JSON.stringify(this.playerBoard));
-            copy[move.y][move.x] = isShip ? 's' : 'w';
-            this.playerBoard = copy;
-            if (isShip) {
-                this.playerShips = this.playerShips.map(ship => {
-                    if (ship.id === fieldValue) {
-                        ship.damaged++;
-                        if (ship.damaged === ship.size) {
-                            ship.isDestroyed = true;
+    compMove(){
+        let possibleCells = this.playerBoard.grid.flat().filter(cell => cell.covered && cell.isValidGuess)
+
+        // if comp already knows something, pick nextCellToTry, otherwise pick randomly from all available cells, minus those that are directly adjacent to a ship
+        const cellToTry = this.compKnows.nextCellToTry || possibleCells[Math.floor(Math.random() * possibleCells.length)];
+
+        this.playerBoard.grid = this.playerBoard.grid.map(row => row.map(cell => {
+            if (cell.id === cellToTry.id){
+                cell.covered = false;
+
+                // update possibleCells, because comp needs those later to decide which cell to try next
+                possibleCells = possibleCells.filter(c => c.id !== cell.id)
+
+                // if this is a hit
+                if (cell.shipId){
+                    this.compKnows.x = cell.x
+                    this.compKnows.y = cell.y
+                    let nextCellsToTry;
+
+                    // if this is first hit
+                    if (this.compKnows.startX === null){
+                        /** initialise "this.compKnows" values
+                         * - startX and startY are saved in case comp hits the edge of a ship and needs to go back in the other direction
+                         * - testingIsHori is a random choice to determine whether comp picks a horizontally or vertically adjacent nextCellToTry
+                         * **/
+                        this.compKnows.startX = cell.x;
+                        this.compKnows.startY = cell.y;
+                        this.compKnows.testingIsHori = Math.random() < 0.5;
+
+                        nextCellsToTry = this.compKnows.testingIsHori ? possibleCells.filter(c => this.isAdjacentHori(c, cell.x, cell.y)) : possibleCells.filter(c => this.isAdjacentVert(c, cell.x, cell.y))
+                        // if nextCells is empty, it means that comp's random choice of isHori lead to a situation where he already ruled out the other direction by previous (random) shoots
+                        if (nextCellsToTry.length === 0){
+                            this.compKnows.testingIsHori = !this.compKnows.testingIsHori;
+                            this.compKnows.isHori = this.compKnows.testingIsHori;
+                            nextCellsToTry = this.compKnows.isHori ? possibleCells.filter(c => this.isAdjacentHori(c, cell.x, cell.y)) : possibleCells.filter(c => this.isAdjacentVert(c, cell.x, cell.y))
+                        }
+                    // second/third/... hit
+                    } else {
+                        /**
+                         * - isHori is now known
+                         * - nextCellsToTry depend on the direction comp is already going
+                         * **/
+                        if (this.compKnows.isHori === null){ // make sure I don't override previous knowledge
+                            this.compKnows.isHori = this.compKnows.testingIsHori;
+                        }
+                        nextCellsToTry = this.compKnows.isHori ? possibleCells.filter(c => this.isAdjacentHori(c, cell.x, cell.y)) : possibleCells.filter(c => this.isAdjacentVert(c, cell.x, cell.y))
+                    }
+
+
+                    // if there's still no nextCells, comp has reached edge of ship and already uncovered the next cell in a previous shoot
+                    if (nextCellsToTry.length === 0){
+                        // go back to start and in the other direction
+                        let nextCoordsToTry;
+                        if (this.compKnows.isHori){
+                            nextCoordsToTry = this.compKnows.x > this.compKnows.startX ? [this.compKnows.startX - 1, this.compKnows.startY] : [this.compKnows.startX + 1, this.compKnows.startY]
+                        } else if (this.compKnows.isHori === false) {
+                            nextCoordsToTry = this.compKnows.y > this.compKnows.startY ? [this.compKnows.startX, this.compKnows.startY - 1] : [this.compKnows.startX, this.compKnows.startY + 1]
+                        }
+                        nextCellsToTry = [possibleCells.find(cell => cell.x === nextCoordsToTry[0] && cell.y === nextCoordsToTry[1])]
+                    }
+
+                    this.compKnows.nextCellToTry = nextCellsToTry[Math.floor(Math.random() * nextCellsToTry.length)]
+
+                    // update playerShips (increase damage and determine whether ship is destroyed or not)
+                    this.playerShips = this.playerShips.map(ship => {
+                        if (ship.id === cell.shipId){
+                            ++ship.damage;
+                            if (ship.damage === ship.shipSize){
+                                ship.isDestroyed = true;
+                                this.compKnows = this.initCompKnows()
+
+                                // remove cells around the ship from pool of possible cells to try
+                                const shipCoords = this.playerBoard.grid.flat().filter(c => c.shipId === ship.id).map(c =>({x: c.x, y: c.y, isShip:true}));
+                                const bordersAround = this.playerBoard.addBordersAroundShip(ship, shipCoords)
+                                bordersAround.forEach(({x, y, isShip}) => {
+                                    if (!isShip) {
+                                        this.playerBoard.grid[y][x].isValidGuess = false
+                                    }
+                                })
+                            }
+                        }
+                        return ship;
+                    })
+                } else {
+                    // no hit, but comp is already testing
+                    if (this.compKnows.startX !== null){
+                        this.compKnows.x = cell.x
+                        this.compKnows.y = cell.y
+
+                        if (this.compKnows.isHori !== null){
+                            // if comp already knows ship orientation but got no hit this time -> reached edge of ship
+                            /**
+                             * nextCellToTry: going back to the first hit (startX, startY) and walking in the other direction
+                             * **/
+                            let nextCoordsToTry;
+                            if(this.compKnows.isHori){
+                                nextCoordsToTry = this.compKnows.x > this.compKnows.startX ? [this.compKnows.startX - 1, this.compKnows.startY] : [this.compKnows.startX + 1, this.compKnows.startY]
+                            } else {
+                                nextCoordsToTry = this.compKnows.y > this.compKnows.startY ? [this.compKnows.startX, this.compKnows.startY - 1] : [this.compKnows.startX, this.compKnows.startY + 1]
+                            }
+
+                            this.compKnows.nextCellToTry = possibleCells.find(cell => cell.x === nextCoordsToTry[0] && cell.y === nextCoordsToTry[1])
+                        } else {
+                            // comp is still busy finding the ship's orientation
+                            /**
+                             * nextCellsToTry are either above/below or left/right of the starting position, depending on testingIsHori
+                             * **/
+                            let nextCellsToTry = this.compKnows.testingIsHori ? possibleCells.filter(c => this.isAdjacentHori(c, this.compKnows.startX, this.compKnows.startY)) : possibleCells.filter(c => this.isAdjacentVert(c, this.compKnows.startX, this.compKnows.startY));
+                            // if comp has tried both sides (above and below/left and right) and both were no hit (or are unavailable because it's the corner of the board),
+                            // -> isHori is now known
+                            if (nextCellsToTry.length === 0){
+                                this.compKnows.isHori = !this.compKnows.testingIsHori;
+                            }
+                            if (this.compKnows.isHori !== null){
+                                nextCellsToTry = this.compKnows.isHori ? possibleCells.filter(c => this.isAdjacentHori(c, this.compKnows.startX, this.compKnows.startY)) : possibleCells.filter(c => this.isAdjacentVert(c, this.compKnows.startX, this.compKnows.startY))
+                            }
+                            this.compKnows.nextCellToTry = nextCellsToTry[Math.floor(Math.random() * nextCellsToTry.length)]
                         }
                     }
-                    return ship;
-                });
-                //nextMove.hit = true;
+                }
             }
-            this.compMoves.push(move);
-        } else {
-            console.log('TODO');
-        }
-        if (this.playerShips.every(ship => ship.isDestroyed)) {
-            this.winner = 'comp';
+            return cell;
+        }))
+        if (this.playerShips.every(ship => ship.isDestroyed)){
+            this.winner = 'computer'
         }
     }
 
     startGame() {
         this.phase = phases[1];
     }
+}
+
+class Board {
+    constructor(gridSize){
+        this.gridSize = gridSize;
+        this.grid = this.createCellsArray()
+    }
+
+    createCellsArray = () => Array(this.gridSize).fill(0).map((_, i) => Array(this.gridSize).fill(0).map((cell,j) => ({id: `${j}-${i}`, x:j, y:i, shipId:null, canPlaceShip:true, covered:true, isValidGuess:true})));
+
+    startcellToShipCoords = (ship, cellX, cellY) => {
+        const coords = []
+        // walk through all cells that the ship would occupy
+        for (let i=0; i < ship.shipSize; i++){
+            const x = ship.isHori ? cellX + i : cellX;
+            const y = ship.isHori ? cellY : cellY + i;
+
+            // break loop if ship would be placed outside of board
+            if (x > this.gridSize-1 || y > this.gridSize-1){
+                break;
+            }
+            // break loop if cell is not free
+            if (!this.grid[y][x].canPlaceShip){
+                break;
+            }
+            coords.push({x, y, isShip:true})
+        }
+        // filter out coords arrays that are shorter than ship
+        return coords.length === ship.shipSize ? coords : null
+    }
+
+    startcellToHoverCoords = (ship, cellX, cellY) => {
+        const coords = [];
+        let isValid = true;
+        // walk through all cells that the ship would occupy
+        for (let i=0; i < ship.shipSize; i++){
+            const x = ship.isHori ? cellX + i : cellX;
+            const y = ship.isHori ? cellY : cellY + i;
+
+            // break loop if ship would be placed outside of board
+            if (x > this.gridSize-1 || y > this.gridSize-1){
+                isValid = false;
+                break;
+            }
+            // setIsValid to false if ship is directly adjacent to another ship
+            if (!this.grid[y][x].canPlaceShip){
+                isValid = false
+            }
+            coords.push({x, y})
+        }
+        // return coords and isValid
+        return isValid ? {values:coords, isValid:true} : {values:coords, isValid:false}
+    }
+
+    getRandomShipCoords = ship => {
+        const positions = [];
+        // walk through all grid cells and assume they could be possible starting coords of a ship
+        this.grid.forEach(row => row.forEach(cell => {
+            const coords = this.startcellToShipCoords(ship, cell.x, cell.y);
+            if (coords){
+                positions.push(coords)
+            }
+        }))
+        // pick one random item from all possible positions
+        return positions[Math.floor(Math.random() * positions.length)];
+    }
+
+    addBordersAroundShip = (ship, coords) => {
+        // this is horrible
+        if (ship.isHori){
+            const above = coords[0].y > 0 ? coords.map(({x,y}) => ({x, y:y-1, isShip:false})) : [];
+            const below = coords[0].y < this.gridSize-1 ? coords.map(({x,y}) => ({x, y:y+1, isShip:false})) : [];
+            const left = coords[0].x > 0 ? [{x:coords[0].x-1, y: coords[0].y, isShip:false}] : [];
+            const right = coords[coords.length-1].x < this.gridSize-1 ? [{x:coords[coords.length-1].x+1, y: coords[coords.length-1].y, isShip:false}] : [];
+            coords.push(...above, ...below, ...left, ...right);
+        } else {
+            const above = coords[0].y > 0 ? [{x:coords[0].x, y: coords[0].y-1, isShip:false}] : [];
+            const below = coords[coords.length-1].y < this.gridSize-1 ? [{x:coords[0].x, y: coords[coords.length-1].y+1, isShip:false}] : [];
+            const left = coords[0].x > 0 ? coords.map(({x,y}) => ({x: x-1, y, isShip:false})) : [];
+            const right = coords[coords.length-1].x < this.gridSize-1 ? coords.map(({x,y}) => ({x: x+1, y, isShip:false})) : [];
+            coords.push(...above, ...below, ...left, ...right)
+        }
+        return coords
+    }
+
+    placeCompShip(ship){
+        const shipCoords = this.getRandomShipCoords(ship);
+        this.placeShipOnBoard(ship, shipCoords)
+    }
+
+    placePlayerShip(ship, cell){
+        const coords = this.startcellToShipCoords(ship, cell.x, cell.y);
+        if (!coords){
+            return false;
+        }
+        this.placeShipOnBoard(ship, coords)
+        return true;
+    }
+
+    placeShipOnBoard(ship, shipCoords){
+        // add "borders" around ship coords (two ships can't be placed directly next to each other)
+        const coords = this.addBordersAroundShip(ship, shipCoords);
+        coords.forEach(({x, y, isShip}) => {
+            this.grid[y][x].shipId = isShip ? ship.id : null;
+            this.grid[y][x].canPlaceShip = false;
+        })
+        ship.isPlaced = true;
+    }
+
+    logGrid = () => {
+        console.log('----------------------------')
+        this.grid.forEach(row => console.log(row.map(cell => cell.shipId)))
+        console.log('----------------------------')
+    }
+}
+
+
+
+
+class Ship {
+    constructor(id, shipSize, isHori, isPlaced, isSelected){
+        this.id = id;
+        this.shipSize = shipSize;
+        this.isHori = isHori;
+        this.isPlaced = isPlaced;
+        this.isSelected = isSelected;
+        this.damage = 0;
+        this.isDestroyed = false;
+    }
+
+    rotateShip = () => this.isHori = !this.isHori;
 }
 
 export default Battleship;

@@ -1,9 +1,3 @@
-## battleShip
+## jsdisco/projects
 
-### BUGS
-
--   select last ship, place all others in order -> allows to place two 2-ships
-
-### TODO
-
-- computer makes stupid decisions
+[jsdisco.dev/battleship](https://jsdisco.dev/battleship)
