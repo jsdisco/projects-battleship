@@ -13,8 +13,8 @@ export default function BattleShip() {
     const [game, setGame] = useState(null);
     const [hoveredCells, setHoveredCells] = useState(null);
     const [compBoard, setCompBoard] = useState([]);
-    const [playerBoard, setPlayerBoard] = useState([])
-    const [playerShips, setPlayerShips] = useState([])
+    const [playerBoard, setPlayerBoard] = useState([]);
+    const [playerShips, setPlayerShips] = useState([]);
     const [isPlayerMove, setIsPlayerMove] = useState(false);
 
     useEffect(() => {
@@ -22,18 +22,17 @@ export default function BattleShip() {
             const newGame = new Battleship();
             setGame(newGame);
             setCompBoard(newGame.compBoard.grid);
-            setPlayerBoard(newGame.playerBoard.grid)
-            setPlayerShips(newGame.playerShips)
+            setPlayerBoard(newGame.playerBoard.grid);
+            setPlayerShips(newGame.playerShips);
         }
     }, [game]);
 
-
-    const changeOrientation = () => game.playerShips.forEach(ship => ship.rotateShip())
+    const changeOrientation = () => game.playerShips.forEach(ship => ship.rotateShip());
 
     const hoverBoard = (i, j) => {
-        const ship = playerShips.find(s => s.isSelected)
-        if (ship){
-            setHoveredCells(game.playerBoard.startcellToHoverCoords(ship, j, i))
+        const ship = playerShips.find(s => s.isSelected);
+        if (ship) {
+            setHoveredCells(game.playerBoard.startcellToHoverCoords(ship, j, i));
         }
     };
 
@@ -41,22 +40,22 @@ export default function BattleShip() {
 
     const selectShip = id => {
         game.selectPlayerShip(id);
-        setPlayerShips(game.playerShips)
+        setPlayerShips(game.playerShips);
     };
 
     const handleResetBoard = () => {
-        game.resetPlayerBoard(false)
+        game.resetPlayerBoard(false);
         setPlayerBoard(game.playerBoard.grid);
-        setPlayerShips(game.playerShips)
+        setPlayerShips(game.playerShips);
     };
 
-    const handlePlaceShip = (cell) => {
-        const ship = game.playerShips.find(s => s.isSelected)
-        const wasPlaced = game.playerBoard.placePlayerShip(ship, cell)
+    const handlePlaceShip = cell => {
+        const ship = game.playerShips.find(s => s.isSelected);
+        const wasPlaced = game.playerBoard.placePlayerShip(ship, cell);
 
         if (wasPlaced) {
-            game.selectNextPlayerShip()
-            setPlayerShips(game.playerShips)
+            game.selectNextPlayerShip();
+            setPlayerShips(game.playerShips);
         }
     };
 
@@ -67,7 +66,6 @@ export default function BattleShip() {
 
     const handleNewGame = () => {
         const newGame = new Battleship();
-        console.log(newGame)
         setGame(newGame);
         setCompBoard(newGame.compBoard.grid);
         setPlayerBoard(newGame.playerBoard.grid);
@@ -76,16 +74,16 @@ export default function BattleShip() {
         setHoveredCells(null);
     };
 
-    const handlePlayerMove = (cell) => {
+    const handlePlayerMove = cell => {
         if (isPlayerMove) {
             const wasValidMove = game.playerMove(cell);
-            if (wasValidMove){
+            if (wasValidMove) {
                 setIsPlayerMove(false);
                 setCompBoard(game.compBoard.grid);
-                if (!game.winner){
+                if (!game.winner) {
                     setTimeout(() => {
                         game.compMove();
-                        setPlayerBoard(game.playerBoard.grid)
+                        setPlayerBoard(game.playerBoard.grid);
                         setIsPlayerMove(true);
                     }, 900);
                 }
